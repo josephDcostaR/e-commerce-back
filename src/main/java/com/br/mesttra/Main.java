@@ -62,6 +62,28 @@ public class Main {
         return (Request request, Response response) -> {
             Produto novo_produto = new Gson().fromJson(request.body(), Produto.class);
             novo_produto.setId(lista_produtos.size() + 1);
+
+            if (novo_produto.getNome_produto() == null || novo_produto.getNome_produto().isEmpty()) {
+                response.status(400);
+                return new Gson().toJson("Nome do produto é obrigatório");
+            }
+
+            if (novo_produto.getCategoria_produto() == null || novo_produto.getCategoria_produto().isEmpty()) {
+                response.status(400);
+                return new Gson().toJson("Nome da categoria é obrigatório");
+
+            }
+
+            if (novo_produto.getPreco_produto() == null) {
+                response.status(400);
+                return new Gson().toJson("Valor do produto é obrigatório");
+            }
+
+            if (novo_produto.getPreco_produto() <= 0 ) {
+                response.status(400);
+                return new Gson().toJson("O preço deve ser maior que zero");
+            }
+
             lista_produtos.add(novo_produto);
 
             response.type("application/json");
@@ -72,11 +94,19 @@ public class Main {
 
     private static Route atualizar_produto() {
         return (Request request, Response response) -> {
-            int codigo = Integer.parseInt(request.params(":codigo"));         
+            int codigo;
+            
+            try {
+                codigo = Integer.parseInt(request.params(":codigo"));
+            } catch (NumberFormatException e) {
+                // TODO: handle exception
+                response.status(400);
+                return new Gson().toJson("ID inválido");
+            }        
 
             if (lista_produtos.isEmpty()) {
                 response.status(404); 
-                return new Gson().toJson("Não existem contatos na base.");
+                return new Gson().toJson("Não existem produtos na base.");
 
             } else {
                 for(Produto produto : lista_produtos){
@@ -95,38 +125,47 @@ public class Main {
 
                         response.status(200);
 
-                        return new Gson().toJson("Usuário com ID " + codigo + " foi atualizado com sucesso!");
+                        return new Gson().toJson("Produto com ID " + codigo + " foi atualizado com sucesso!");
                     }
                    
                 }
 
                 response.status(404); // 404 Not Found
-                return new Gson().toJson("Contato com o ID " + codigo + " especificado não encontrado.");
+                return new Gson().toJson("Produto com o ID " + codigo + " especificado não encontrado.");
             }
         };
     }
 
     private static Route deletar_produto() {
         return (Request request, Response response) -> {
-            int codigo = Integer.parseInt(request.params(":codigo"));
+            int codigo;
+            
+            try {
+                codigo = Integer.parseInt(request.params(":codigo"));
+            } catch (NumberFormatException e) {
+                // TODO: handle exception
+                response.status(400);
+                return new Gson().toJson("ID inválido");
+            }
+            
             
             // Lógica de exclusão
             if (lista_produtos.isEmpty()) {
                 response.status(404); // 404 Not Found
-                return new Gson().toJson("Não existem contatos na base");
+                return new Gson().toJson("Não existem produtos na base");
             } 
 
-            boolean produto_removido = lista_produtos.removeIf(pessoa ->
-            pessoa.getId() == codigo);
+            boolean produto_removido = lista_produtos.removeIf(produto ->
+            produto.getId() == codigo);
 
             if (produto_removido) {
                 response.type("application/json"); // Define o tipo de conteúdo como JSON
 
                 response.status(200);
-                return new Gson().toJson("Usuário com ID " + codigo + " foi excluído com sucesso!");
+                return new Gson().toJson("Produto com ID " + codigo + " deletado.");
             } else {
                 response.status(404);
-                return new Gson().toJson("Contato com ID " + codigo + " não encontrado.");
+                return new Gson().toJson("Produto com ID " + codigo + " não encontrado.");
             }
         };
     }
